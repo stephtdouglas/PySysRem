@@ -1,7 +1,10 @@
+import logging
+
 import numpy as np
+import astropy.io.fits as fits
 
 class source:
-    def __init__(self, xc, yc=0, xs=[], ys=[], xschip=[], yschip=[], mags=[], magerrors=[], epochs=[], flags=[], filename=""):
+    def __init__(self, xc, yc, xs, ys, xschip, yschip, mags, magerrors, epochs, flags, filename):
         self.xc = xc
         self.yc = yc
         self.xschip = xschip
@@ -12,7 +15,6 @@ class source:
         self.magerrors = magerrors
         self.epochs = epochs
         self.flags = flags
-        self.images = []
         self.filename = filename
 
     def good_epochs_only(self):
@@ -55,3 +57,29 @@ class source:
 
         ptf_lc = cls(xc, yc, xskys, yskys, xschip, yschip, mags, magerrors, epochs, flags, filename)
         return ptf_lc
+
+    @classmethod
+    def from_k2sff(cls,filename,ext=1):
+        """ Create a light curve object from a K2SFF light curve.
+        If no extension is specified, the "BESTAPER" extension (1) will be used.
+        """
+
+        if ext==0:
+            logging.warning("Ext 0 is the header. Using BESTAPER (ext=1)")
+            ext=1
+
+        with fits.open(filename) as hdu:
+            table = hdu[ext].data
+
+            epochs = table["T"]
+            mags = table["FCOR"]
+            magerrors = np.ones_like(mags)
+            xskys = np.zeros_like(mags)
+            yskys = np.zeros_like(mags)
+            xschip = np.zeros_like(mags)
+            yschip = np.zeros_like(mags)
+            flags = table["MOVING"]
+            xc, yc = 0,0
+
+        k2sff_lc = cls(xc, yc, xskys, yskys, xschip, yschip, mags, magerrors, epochs, flags, filename)
+        return k2sff_lc
