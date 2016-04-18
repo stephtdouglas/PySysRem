@@ -4,25 +4,37 @@ import numpy as np
 import astropy.io.fits as fits
 
 class source:
-    def __init__(self, xc, yc, xs, ys, xschip, yschip, mags, magerrors, epochs, flags, filename):
-        self.xc = xc
-        self.yc = yc
-        self.xschip = xschip
-        self.yschip = yschip
-        self.xs = xs
-        self.ys = ys
+    def __init__(self, mags, magerrors, epochs, flags, filename):
         self.mags = mags
         self.magerrors = magerrors
         self.epochs = epochs
         self.flags = flags
         self.filename = filename
 
-    def good_epochs_only(self):
-        f = self.flags
-        return source(self.xc, self.yc, self.xs[f == 0], self.ys[f == 0], self.xschip[f == 0], self.yschip[f == 0], self.mags[f == 0], self.magerrors[f == 0], self.epochs[f == 0], self.flags[f == 0],self.images[f == 0], self.filename)
+        self.stats()
 
-    def n_good_epochs(self):
-        return len(self.flags[self.flags == 0])
+    def clean_up(self):
+        # First, save the original arrays just in case
+        self.orig_mags = np.copy(self.mags)
+        self.orig_magerrors = np.copy(self.magerrors)
+        self.orig_epochs = np.copy(self.epochs)
+        self.orig_flags = np.copy(self.flags)
+
+        # Remove anything with a flag > 0
+        good = self.flags==0
+        self.mags = self.mags[good]
+        self.magerrors = self.magerrors[good]
+        self.epochs = self.epochs[good]
+        self.flags = self.flags[good]
+        self.good_mask = good
+
+        self.stats()
+
+    def stats(self):
+        self.median, self.std = self._calc_stats(self.mags)
+
+    def _calc_stats(self,flux):
+        return np.median(flux), np.std(flux)
 
     def remove_epoch(self, epoch):
         if epoch in self.epochs:
@@ -55,7 +67,7 @@ class source:
         yc = np.median(yskys)
         # Right now it's not saving the image filenames, which should be fine
 
-        ptf_lc = cls(xc, yc, xskys, yskys, xschip, yschip, mags, magerrors, epochs, flags, filename)
+        ptf_lc = cls(mags, magerrors, epochs, flags, filename)
         return ptf_lc
 
     @classmethod
@@ -81,5 +93,5 @@ class source:
             flags = table["MOVING"]
             xc, yc = 0,0
 
-        k2sff_lc = cls(xc, yc, xskys, yskys, xschip, yschip, mags, magerrors, epochs, flags, filename)
+        k2sff_lc = cls(mags, magerrors, epochs, flags, filename)
         return k2sff_lc

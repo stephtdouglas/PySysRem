@@ -33,19 +33,19 @@ def test_ptf_mags():
     lc = source_lc.source.from_ptf(data)
     assert np.all(lc.mags==lc_orig[:,1])
 
-def test_ptf_mag_errs():
-    lc = source_lc.source.from_ptf(data)
-    assert np.all(lc.magerrors==lc_orig[:,2])
-
-def test_ptf_sky():
-    lc = source_lc.source.from_ptf(data)
-    assert np.all(lc.xs==lc_orig[:,3])
-    assert np.all(lc.ys==lc_orig[:,4])
-
-def test_ptf_chips():
-    lc = source_lc.source.from_ptf(data)
-    assert np.all(lc.xschip==lc_orig[:,5])
-    assert np.all(lc.yschip==lc_orig[:,6])
+# def test_ptf_mag_errs():
+#     lc = source_lc.source.from_ptf(data)
+#     assert np.all(lc.magerrors==lc_orig[:,2])
+#
+# def test_ptf_sky():
+#     lc = source_lc.source.from_ptf(data)
+#     assert np.all(lc.xs==lc_orig[:,3])
+#     assert np.all(lc.ys==lc_orig[:,4])
+#
+# def test_ptf_chips():
+#     lc = source_lc.source.from_ptf(data)
+#     assert np.all(lc.xschip==lc_orig[:,5])
+#     assert np.all(lc.yschip==lc_orig[:,6])
 
 def test_ptf_flags():
     lc = source_lc.source.from_ptf(data)
