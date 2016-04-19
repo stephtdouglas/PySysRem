@@ -95,3 +95,55 @@ class source:
 
         k2sff_lc = cls(mags, magerrors, epochs, flags, filename)
         return k2sff_lc
+
+def fix_epochs(star_list):
+    """ Correct a set of light curves so that all have the same time axis."""
+
+    stars_dim = len(star_list)
+    epoch_lengths = np.zeros(stars_dim,int)
+    # Get all the epoch array lengths
+    for i, star in enumerate(star_list):
+        epoch_lengths[i] = len(star.epochs)
+
+    if np.all(epoch_lengths==epoch_lengths[0]):
+        print("No need for length correction.")
+        return star_list
+
+    # Find the longest
+    longest = np.argmax(epoch_lengths)
+    base_epochs = star_list[longest].epochs
+
+    # I'm assuming the others are just missing points, and don't have extras.
+    # It will get more complicated if we have to cross them all
+    cadence = 0.02043
+    half_cadence = cadence / 2.0
+    for i, star in enumerate(star_list):
+        len_diff = len(base_epochs) - len(star.epochs)
+        if ((len_diff==0) and
+            (np.all(np.abs(star.epochs-base_epochs)<half_cadence))):
+            # If the arrays match, don't worry about it
+            continue
+
+        missing_epochs = np.zeros(len_diff)
+        mcount = 0
+        for i, ep in enumerate(base_epochs):
+            ep_diff = np.abs(star.epochs - ep)
+            if np.any(ep_diff<half_cadence):
+                continue
+            else:
+                missing_epochs[mcount] = ep
+                mcount += 1
+
+        new_epochs = np.append(star.epochs,missing_epochs)
+        extras = np.zeros_like(missing_epochs)
+        new_flux = np.append(star.mags,extras)
+        new_errors = np.append(star.magerrors,extras)
+        new_flags = np.append(star.flags,np.ones(len(missing_epochs),int)*9999)
+
+        sort_eps = np.argsort(new_epochs)
+        star.epochs = new_epochs[sort_eps]
+        star.mags = new_flux[sort_eps]
+        star.magerrors = new_errors[sort_eps]
+        star.flags = new_flags[sort_eps]
+
+    return star_list

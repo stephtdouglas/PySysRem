@@ -22,6 +22,7 @@ np.set_printoptions(threshold=np.nan, precision=6)
 
 def generate_matrix(star_list):
 
+    print("generating residuals matrix")
     stars_dim = len(star_list)
     epoch_dim = len(star_list[0].epochs)
 
@@ -57,6 +58,9 @@ def generate_matrix(star_list):
 
         # Save filenames into a list
         filenames[x] = star.filename.split("/")[-1]
+        print("added ",filenames[x])
+
+    print("finished matrix")
 
     return residuals, errors, median_list, star_list
 
@@ -64,6 +68,8 @@ def sysrem(input_star_list):
 
     residuals, errors, median_list, star_list = generate_matrix(input_star_list)
     stars_dim, epoch_dim = np.shape(residuals)
+
+    print("starting sysrem")
 
     # This medians.txt file is a 2D list with the first column being the medians
     # of stars' magnitudes at different epochs (the good ones) and their
@@ -99,11 +105,14 @@ def sysrem(input_star_list):
         # Remove the systematic error
         residuals = residuals - syserr
 
+        print("removed systematic #",num_errors)
+
     # Reproduce the results in terms of medians and standard deviations for plotting
     outfile_performance = open('sysrem_performance.txt','w')
 
     for x,star in enumerate(star_list):
 
+        print("Now correcting star #",x)
         good_residuals = residuals[x][star.good_mask]
         correction = good_residuals + median_list[x]
         corrected_mags = np.copy(star.orig_mags)

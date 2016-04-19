@@ -76,7 +76,7 @@ def test_sysrem_fakes():
     # The output light curve should be as long as the entire original lc
     assert lenfake==100
 
-def test_real_stars():
+def test_real_ptf_stars():
     filenames = ["lc_00001_calib.txt", "lc_00002_calib.txt",
                  "lc_00003_calib.txt", ]
     star_list = []
@@ -94,3 +94,35 @@ def test_real_stars():
     check_diff = (flux_diff<1e-10) | (new_flux<=-9998)
 
     assert np.all(check_diff)
+
+data = os.path.join(os.path.dirname(__file__),"k2sff_211889983.fits")
+# Extract the original file for testing
+
+def test_real_k2sff_stars():
+    # These all have the same epoch arrays
+    filenames = ["k2sff_211889983.fits",
+                 "k2sff_211892153.fits", "k2sff_211892173.fits"]
+    nstars = len(filenames)
+    star_list = []
+    for i in range(nstars):
+        star = source_lc.source.from_k2sff(filenames[i])
+        star_list.append(star)
+    sysrem.sysrem(star_list)
+
+def test_sysrem_fix_epochs():
+    # These have different-length light curves
+    filenames = ["k2sff_211887567.fits","k2sff_211889983.fits",
+                 "k2sff_211892153.fits", "k2sff_211892173.fits"]
+    nstars = len(filenames)
+    star_list = []
+    ep_lengths = np.zeros(nstars,int)
+    for i in range(nstars):
+        star = source_lc.source.from_k2sff(filenames[i])
+        star_list.append(star)
+        ep_lengths[i] = len(star.epochs)
+    old_stars = star_list
+
+    if np.all(ep_lengths==ep_lengths[0])==False:
+        new_list = source_lc.fix_epochs(star_list)
+
+    sysrem.sysrem(new_list)
