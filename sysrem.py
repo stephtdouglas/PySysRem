@@ -29,7 +29,6 @@ def generate_matrix(star_list):
     residuals = np.zeros((stars_dim, epoch_dim))
     errors = np.zeros((stars_dim, epoch_dim))
     medians = np.zeros(stars_dim)
-    final_medians=np.zeros((stars_dim,2))
 
     nstars = stars_dim
     filenames = np.empty(nstars,"S100")
@@ -43,8 +42,6 @@ def generate_matrix(star_list):
         star.clean_up()
 
         median_list[x] = star.median
-        final_medians[x,0] = star.median
-        final_medians[x,1]=  star.std
 
         # Calculate residuals from the ORIGINAL light curve
         star_residuals = star.orig_mags - star.median
@@ -63,8 +60,9 @@ def generate_matrix(star_list):
 
     return residuals, errors, median_list, star_list
 
-def sysrem(residuals, errors, median_list, star_list):
+def sysrem(input_star_list):
 
+    residuals, errors, median_list, star_list = generate_matrix(input_star_list)
     stars_dim, epoch_dim = np.shape(residuals)
 
     # This medians.txt file is a 2D list with the first column being the medians
@@ -78,41 +76,19 @@ def sysrem(residuals, errors, median_list, star_list):
         # minimize a and c values for a number of iterations, iter
         for iter in range(10):
 
-            # # Using the initial guesses for each a value of each epoch, minimize c for each star
-            # for s in range(stars_dim):
-            #     err_squared = errors[s]**2
-            #     numerator = np.sum(a*residuals[s]/err_squared)
-            #     denominator = np.sum(a**2/err_squared)
-            #     c[s] = numerator / denominator
-            #
-            # # Using the c values found above, minimize a for each epoch
-            # for ep in range(epoch_dim):
-            #     err_squared = errors[:,ep]**2
-            #     numerator = np.sum(c*residuals[:,ep]/err_squared)
-            #     denominator = np.sum(c**2/err_squared)
-            #     a[ep] = numerator / denominator
-
-        # Using the initial guesses for each a value of each epoch, minimize c for each star
+            # Using the initial guesses for each a value of each epoch, minimize c for each star
             for s in range(stars_dim):
-                numerator = 0
-                denominator = 0
-                for ep in range(epoch_dim):
-                    numerator = numerator + (((a[ep])*(residuals[s,ep]))/((errors[s,ep])**2))
-                    denominator = denominator + ((a[ep])**(2))/((errors[s,ep])**(2))
-                c[s]=numerator/denominator
+                err_squared = errors[s]**2
+                numerator = np.sum(a*residuals[s]/err_squared)
+                denominator = np.sum(a**2/err_squared)
+                c[s] = numerator / denominator
 
             # Using the c values found above, minimize a for each epoch
             for ep in range(epoch_dim):
-                numerator = 0
-                denominator = 0
-                for s in range(stars_dim):
-                    numerator = numerator + (((c[s])*(residuals[s,ep]))/((errors[s,ep])**2))
-                    denominator = denominator + ((c[s])**(2))/((errors[s,ep])**(2))
-                a[ep]=numerator/denominator
-
-
-            #print iter, c[0], a[0]
-
+                err_squared = errors[:,ep]**2
+                numerator = np.sum(c*residuals[:,ep]/err_squared)
+                denominator = np.sum(c**2/err_squared)
+                a[ep] = numerator / denominator
 
         # Create a matrix for the systematic errors:
         syserr=np.zeros((stars_dim, epoch_dim))
@@ -121,38 +97,25 @@ def sysrem(residuals, errors, median_list, star_list):
                 syserr[s,e]=a[e]*c[s]
 
         # Remove the systematic error
-        residuals=residuals-syserr
-
-    outfile_performance = open('sysrem_performance.txt','w')
+        residuals = residuals - syserr
 
     # Reproduce the results in terms of medians and standard deviations for plotting
-    perf=np.zeros((stars_dim, 2))
+    outfile_performance = open('sysrem_performance.txt','w')
 
     for x,star in enumerate(star_list):
 
-        flag_list=star.orig_flags
-        good_residuals=[]
-        final_median=[]
-        std_dev=[]
-
-
-        n = 0
-        for flag in range(len(flag_list)):
-            if flag_list[flag]==0:
-                good_residuals.append(residuals[x][flag])
-                star.orig_mags[flag] = (good_residuals + median_list[x])[n]
-                n+=1
+        good_residuals = residuals[x][star.good_mask]
+        correction = good_residuals + median_list[x]
+        corrected_mags = np.copy(star.orig_mags)
+        corrected_mags[star.good_mask] = correction
 
         final_median = np.median(good_residuals + median_list[x])
         std_dev = np.std(good_residuals + median_list[x])
         print >> outfile_performance, final_median, std_dev
-        perf[x,0]=final_median
-        perf[x,1]=std_dev
-        x += 1
 
         outfile_name = star.filename[:-4]+".sysrem.txt"
         data = {"epochs":star.orig_epochs,
-                "mags":star.orig_mags,
+                "mags":corrected_mags,
                 "errors":star.orig_magerrors,
                 "flags":star.orig_flags}
         formats = {"epochs":"%06f",
@@ -180,5 +143,4 @@ if __name__=="__main__":
         star = source_lc.source.from_ptf(filename)
         star_list.append(star)
 
-    residuals, errors, filenames = generate_matrix(star_list)
-    sysrem(residuals, errors, star_list)
+    sysrem(star_list)

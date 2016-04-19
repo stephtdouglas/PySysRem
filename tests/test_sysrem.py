@@ -69,8 +69,7 @@ def test_sysrem_fakes():
                                 "faketest/star_{0}.txt".format(i))
         star_list.append(star)
 
-    res, err, meds, slist = sysrem.generate_matrix(star_list)
-    sysrem.sysrem(res, err, meds, slist)
+    sysrem.sysrem(star_list)
 
     fake_lc = at.read("faketest/star_1.sysrem.txt")
     lenfake = len(fake_lc)
@@ -84,8 +83,7 @@ def test_real_stars():
     for i in range(3):
         star = source_lc.source.from_ptf(filenames[i])
         star_list.append(star)
-    residuals, errors, meds, star_list2 = sysrem.generate_matrix(star_list)
-    sysrem.sysrem(residuals, errors, meds, star_list2)
+    sysrem.sysrem(star_list)
 
     old_lc = np.loadtxt("lc_00001_sysrem.txt",usecols=np.arange(8))
     old_flux = old_lc[:,1]
