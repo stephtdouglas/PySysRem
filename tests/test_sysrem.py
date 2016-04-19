@@ -11,9 +11,6 @@ import astropy.io.fits as fits
 from .. import source_lc
 from .. import sysrem
 
-def test_pass():
-    pass
-
 fake_epochs = np.linspace(0,10,100)
 fake_flux = np.sin(fake_epochs)
 fake_flags = np.zeros(100,int)
@@ -75,8 +72,8 @@ def test_sysrem_fakes():
     res, err, meds, slist = sysrem.generate_matrix(star_list)
     sysrem.sysrem(res, err, meds, slist)
 
-    fake_lc = np.loadtxt("faketest/star_1.sysrem.txt",usecols=np.arange(4))
-    lenfake = len(fake_lc[:,0])
+    fake_lc = at.read("faketest/star_1.sysrem.txt")
+    lenfake = len(fake_lc)
     # The output light curve should be as long as the entire original lc
     assert lenfake==100
 
@@ -92,10 +89,10 @@ def test_real_stars():
 
     old_lc = np.loadtxt("lc_00001_sysrem.txt",usecols=np.arange(8))
     old_flux = old_lc[:,1]
-    new_lc = np.loadtxt("lc_00001_calib.sysrem.txt",usecols=np.arange(4))
-    new_flux = new_lc[:,1]
+    new_lc = at.read("lc_00001_calib.sysrem.txt")
+    new_flux = new_lc["mags"]
 
     flux_diff = np.abs(old_flux - new_flux)
-    check_diff = (flux_diff<1e-10) | (new_flux<=-9999)
+    check_diff = (flux_diff<1e-10) | (new_flux<=-9998)
 
     assert np.all(check_diff)
