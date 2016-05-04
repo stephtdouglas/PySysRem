@@ -3,7 +3,7 @@ light curves based on a paper by O. Tamuz, T. Mazeh and S. Zucker (2004)
 titled "Correcting systematic effects in a large set of photometric light
 curves".
 
-Copyright (c) 2016 Stephanie Douglas, Aida Ahmadi, and Marcel Agueros
+Copyright (c) 2016 Stephanie Douglas, Aida Ahmadi, and Marcel Agüeros
 
 Use at your own risk. This is free and open source software made available under the MIT License. For details see the LICENSE file.
 
